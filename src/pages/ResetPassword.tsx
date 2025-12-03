@@ -88,7 +88,7 @@ const ResetPassword = () => {
           {/* Logo */}
           <div className="flex items-center gap-2">
             <div className="w-12 h-12 bg-fundo-branco rounded-full flex items-center justify-center">
-              <img src="../../public/pomo.png" className="img" alt="Pomo Project" />
+              <img src="/pomo.png" className="img" alt="Pomo Project" />
             </div>
           </div>
 
@@ -186,3 +186,4 @@ const ResetPassword = () => {
 };
 
 export default ResetPassword;
+

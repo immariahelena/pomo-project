@@ -36,7 +36,7 @@ const Index = () => {
         <div className="container mx-auto px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <div className="w-12 h-12 bg-fundo-branco rounded-full flex items-center justify-center">
-              <img src="../../public/pomo.png"  alt="" className="img" />
+              <img src="/pomo.png"  alt="" className="img" />
             </div>
             
             <span className="text-2xl font-bold">Pomo Projects</span>
@@ -114,3 +114,4 @@ const Index = () => {
 };
 
 export default Index;
+

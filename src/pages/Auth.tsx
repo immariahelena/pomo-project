@@ -131,13 +131,13 @@ const Auth = () => {
         navigate("/dashboard");
       } else {
         // Validate signup inputs
-        const validation = signupSchema.safeParse({ 
-          email, 
-          password, 
-          confirmPassword, 
-          fullName 
+        const validation = signupSchema.safeParse({
+          email,
+          password,
+          confirmPassword,
+          fullName
         });
-        
+
         if (!validation.success) {
           const firstError = validation.error.errors[0];
           toast({
@@ -196,8 +196,7 @@ const Auth = () => {
           {/* Logo */}
           <div className="flex items-center gap-2">
             <div className="w-12 h-12 bg-fundo-branco rounded-full flex items-center justify-center">
-              <img src="../../public/pomo.png " className="img"/>
-              
+              <img src="/pomo.png" className="img" alt="Pomo Project" />
             </div>
           </div>
 
@@ -380,10 +379,10 @@ const Auth = () => {
               {loading
                 ? "Processando..."
                 : isForgotPassword
-                ? "Enviar Link de Recuperação"
-                : isLogin
-                ? "Conecte-se"
-                : "Criar Conta"}
+                  ? "Enviar Link de Recuperação"
+                  : isLogin
+                    ? "Conecte-se"
+                    : "Criar Conta"}
             </Button>
 
             {isForgotPassword ? (
