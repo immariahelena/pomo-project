@@ -624,9 +624,15 @@ const ProjectDetails = () => {
 
             <TabsContent value="tasks" className="space-y-4">
               <div className="flex justify-end mb-4">
-                <Dialog open={taskDialogOpen} onOpenChange={handleCloseTaskDialog}>
+                <Dialog open={taskDialogOpen} onOpenChange={(open) => {
+                  if (open) {
+                    setTaskDialogOpen(true);
+                  } else {
+                    handleCloseTaskDialog();
+                  }
+                }}>
                   <DialogTrigger asChild>
-                    <Button className="gap-2">
+                    <Button className="gap-2" onClick={() => setTaskDialogOpen(true)}>
                       <Plus className="h-4 w-4" />
                       Nova Tarefa
                     </Button>
