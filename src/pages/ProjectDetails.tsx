@@ -40,6 +40,7 @@ import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { FileLinkManager } from "@/components/projects/FileLinkManager";
 import { ActivityLog } from "@/components/projects/ActivityLog";
+import { ProjectMembers } from "@/components/projects/ProjectMembers";
 import { z } from "zod";
 
 const statusColors = {
@@ -584,6 +585,7 @@ const ProjectDetails = () => {
           <Tabs defaultValue="overview" className="space-y-4">
             <TabsList>
               <TabsTrigger value="overview">Visão Geral</TabsTrigger>
+              <TabsTrigger value="team">Equipe</TabsTrigger>
               <TabsTrigger value="tasks">Tarefas ({filteredTasks.length})</TabsTrigger>
               <TabsTrigger value="links">Links</TabsTrigger>
               <TabsTrigger value="activity">Atividades</TabsTrigger>
@@ -620,6 +622,10 @@ const ProjectDetails = () => {
                   </div>
                 </CardContent>
               </Card>
+            </TabsContent>
+
+            <TabsContent value="team">
+              <ProjectMembers projectId={id!} projectOwnerId={project.created_by} />
             </TabsContent>
 
             <TabsContent value="tasks" className="space-y-4">
