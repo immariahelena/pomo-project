@@ -147,31 +147,24 @@ const UserManagement = () => {
     if (!deleteUserId) return;
 
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { session } } = await supabase.auth.getSession();
       
-      if (user?.id === deleteUserId) {
-        toast({
-          title: "Erro",
-          description: "Você não pode deletar sua própria conta.",
-          variant: "destructive",
-        });
-        setDeleteUserId(null);
-        return;
+      if (!session) {
+        throw new Error("Usuário não autenticado");
       }
 
-      const { error: rolesError } = await supabase
-        .from("user_roles")
-        .delete()
-        .eq("user_id", deleteUserId);
+      const { data, error } = await supabase.functions.invoke('delete-user', {
+        body: { userId: deleteUserId },
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
+      });
 
-      if (rolesError) throw rolesError;
-
-      const { error: profileError } = await supabase
-        .from("profiles")
-        .delete()
-        .eq("id", deleteUserId);
-
-      if (profileError) throw profileError;
+      if (error) throw error;
+      
+      if (data?.error) {
+        throw new Error(data.error);
+      }
 
       toast({
         title: "Usuário removido!",
@@ -186,6 +179,7 @@ const UserManagement = () => {
         description: error.message,
         variant: "destructive",
       });
+      setDeleteUserId(null);
     }
   };
 
