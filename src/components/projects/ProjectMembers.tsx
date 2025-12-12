@@ -129,16 +129,57 @@ export const ProjectMembers = ({ projectId, projectOwnerId }: ProjectMembersProp
 
   const fetchAvailableUsers = async (currentMembers: Member[]) => {
     try {
-      const { data, error } = await supabase
-        .from("profiles")
-        .select("id, full_name, avatar_url")
-        .order("full_name");
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
 
-      if (error) throw error;
+      // Get the user's role
+      const { data: roleData } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", user.id)
+        .maybeSingle();
+
+      const isAdmin = roleData?.role === 'admin';
+
+      let availableProfiles: AvailableUser[] = [];
+
+      if (isAdmin) {
+        // Admin can see all users
+        const { data, error } = await supabase
+          .from("profiles")
+          .select("id, full_name, avatar_url")
+          .order("full_name");
+
+        if (error) throw error;
+        availableProfiles = data || [];
+      } else {
+        // Manager: get users from their teams using the database function
+        const { data: teamUserIds, error: teamError } = await supabase
+          .rpc('get_team_users_for_manager', { _manager_id: user.id });
+
+        if (teamError) {
+          console.error("Erro ao buscar usuários da equipe:", teamError);
+          // Fallback: no users available
+          setAvailableUsers([]);
+          return;
+        }
+
+        if (teamUserIds && teamUserIds.length > 0) {
+          const userIds = teamUserIds.map((r: { user_id: string }) => r.user_id);
+          const { data, error } = await supabase
+            .from("profiles")
+            .select("id, full_name, avatar_url")
+            .in("id", userIds)
+            .order("full_name");
+
+          if (error) throw error;
+          availableProfiles = data || [];
+        }
+      }
 
       // Filter out users who are already members or the owner
       const memberIds = currentMembers.map(m => m.user_id);
-      const available = (data || []).filter(
+      const available = availableProfiles.filter(
         user => !memberIds.includes(user.id) && user.id !== projectOwnerId
       );
 
