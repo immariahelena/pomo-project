@@ -1,1 +1,13 @@
 project_id = "ghcprqthjnvcooltxgfq"
+
+[functions.delete-user]
+verify_jwt = false
+
+[functions.delete-project]
+verify_jwt = false
+
+[functions.list-users]
+verify_jwt = false
+
+[functions.task-operations]
+verify_jwt = false
