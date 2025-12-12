@@ -77,16 +77,61 @@ Deno.serve(async (req) => {
     }
 
     // Delete user's data in the correct order (due to foreign keys)
-    // 1. Delete from user_roles
+    // 1. Delete from activity_logs
+    await supabaseAdmin.from('activity_logs').delete().eq('user_id', userId)
+    
+    // 2. Delete from ticket_responses
+    await supabaseAdmin.from('ticket_responses').delete().eq('user_id', userId)
+    
+    // 3. Delete from support_tickets
+    await supabaseAdmin.from('support_tickets').delete().eq('user_id', userId)
+    
+    // 4. Delete from notifications
+    await supabaseAdmin.from('notifications').delete().eq('user_id', userId)
+    
+    // 5. Delete from messages
+    await supabaseAdmin.from('messages').delete().eq('user_id', userId)
+    
+    // 6. Delete from files
+    await supabaseAdmin.from('files').delete().eq('uploaded_by', userId)
+    
+    // 7. Update tasks to remove assignment (instead of deleting)
+    await supabaseAdmin.from('tasks').update({ assigned_to: null }).eq('assigned_to', userId)
+    await supabaseAdmin.from('tasks').update({ created_by: null }).eq('created_by', userId)
+    
+    // 8. Delete from project_members (both as member and as added_by)
+    await supabaseAdmin.from('project_members').delete().eq('user_id', userId)
+    await supabaseAdmin.from('project_members').update({ added_by: null }).eq('added_by', userId)
+    
+    // 9. Update projects created by this user (transfer to null or delete)
+    // For now, just nullify the reference - projects stay but with no creator
+    // Note: This might need adjustment based on business logic
+    const { data: userProjects } = await supabaseAdmin
+      .from('projects')
+      .select('id')
+      .eq('created_by', userId)
+    
+    if (userProjects && userProjects.length > 0) {
+      // Delete project stages and tasks for these projects first
+      for (const project of userProjects) {
+        await supabaseAdmin.from('tasks').delete().eq('project_id', project.id)
+        await supabaseAdmin.from('project_stages').delete().eq('project_id', project.id)
+        await supabaseAdmin.from('messages').delete().eq('project_id', project.id)
+        await supabaseAdmin.from('files').delete().eq('project_id', project.id)
+        await supabaseAdmin.from('activity_logs').delete().eq('project_id', project.id)
+        await supabaseAdmin.from('project_members').delete().eq('project_id', project.id)
+      }
+      // Now delete the projects
+      await supabaseAdmin.from('projects').delete().eq('created_by', userId)
+    }
+    
+    // 10. Delete from user_roles
     await supabaseAdmin.from('user_roles').delete().eq('user_id', userId)
     
-    // 2. Delete from profiles
+    // 11. Delete from profiles
     await supabaseAdmin.from('profiles').delete().eq('id', userId)
     
-    // 3. Delete from project_members
-    await supabaseAdmin.from('project_members').delete().eq('user_id', userId)
-    
-    // 4. Delete the auth user using admin API
+    // 12. Finally delete the auth user using admin API
     const { error: deleteError } = await supabaseAdmin.auth.admin.deleteUser(userId)
 
     if (deleteError) {

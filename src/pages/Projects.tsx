@@ -184,12 +184,21 @@ const Projects = () => {
     if (!projectToDelete) return;
 
     try {
-      const { error } = await supabase
-        .from("projects")
-        .delete()
-        .eq("id", projectToDelete);
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) {
+        throw new Error("Usuário não autenticado");
+      }
+
+      const { data, error } = await supabase.functions.invoke('delete-project', {
+        body: { projectId: projectToDelete },
+      });
 
       if (error) throw error;
+      
+      if (data?.error) {
+        throw new Error(data.error);
+      }
 
       toast({
         title: "Projeto excluído com sucesso!",
