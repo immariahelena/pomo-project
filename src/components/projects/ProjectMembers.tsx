@@ -2,7 +2,6 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -30,9 +29,10 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Users, UserPlus, Trash2, Crown } from "lucide-react";
+import { Users, UserPlus, Trash2, Crown, Link, Copy, Check, Clock, XCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useUserRole } from "@/hooks/useUserRole";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface ProjectMembersProps {
   projectId: string;
@@ -56,11 +56,20 @@ interface AvailableUser {
   avatar_url: string | null;
 }
 
+interface Invitation {
+  id: string;
+  token: string;
+  status: string;
+  expires_at: string;
+  created_at: string;
+}
+
 export const ProjectMembers = ({ projectId, projectOwnerId }: ProjectMembersProps) => {
   const { toast } = useToast();
   const { canManageProjects } = useUserRole();
   const [members, setMembers] = useState<Member[]>([]);
   const [availableUsers, setAvailableUsers] = useState<AvailableUser[]>([]);
+  const [invitations, setInvitations] = useState<Invitation[]>([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedUserId, setSelectedUserId] = useState("");
@@ -68,11 +77,14 @@ export const ProjectMembers = ({ projectId, projectOwnerId }: ProjectMembersProp
   const [removeMemberId, setRemoveMemberId] = useState<string | null>(null);
   const [ownerProfile, setOwnerProfile] = useState<AvailableUser | null>(null);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [copiedToken, setCopiedToken] = useState<string | null>(null);
+  const [generatingLink, setGeneratingLink] = useState(false);
 
   useEffect(() => {
     fetchCurrentUser();
     fetchMembers();
     fetchOwnerProfile();
+    fetchInvitations();
   }, [projectId]);
 
   const fetchCurrentUser = async () => {
@@ -105,7 +117,6 @@ export const ProjectMembers = ({ projectId, projectOwnerId }: ProjectMembersProp
 
       if (error) throw error;
 
-      // Fetch profiles for each member
       const membersWithProfiles = await Promise.all(
         (data || []).map(async (member) => {
           const { data: profile } = await supabase
@@ -132,7 +143,6 @@ export const ProjectMembers = ({ projectId, projectOwnerId }: ProjectMembersProp
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      // Get the user's role
       const { data: roleData } = await supabase
         .from("user_roles")
         .select("role")
@@ -140,11 +150,9 @@ export const ProjectMembers = ({ projectId, projectOwnerId }: ProjectMembersProp
         .maybeSingle();
 
       const isAdmin = roleData?.role === 'admin';
-
       let availableProfiles: AvailableUser[] = [];
 
       if (isAdmin) {
-        // Admin can see all users
         const { data, error } = await supabase
           .from("profiles")
           .select("id, full_name, avatar_url")
@@ -153,13 +161,11 @@ export const ProjectMembers = ({ projectId, projectOwnerId }: ProjectMembersProp
         if (error) throw error;
         availableProfiles = data || [];
       } else {
-        // Manager: get users from their teams using the database function
         const { data: teamUserIds, error: teamError } = await supabase
           .rpc('get_team_users_for_manager', { _manager_id: user.id });
 
         if (teamError) {
           console.error("Erro ao buscar usuários da equipe:", teamError);
-          // Fallback: no users available
           setAvailableUsers([]);
           return;
         }
@@ -177,7 +183,6 @@ export const ProjectMembers = ({ projectId, projectOwnerId }: ProjectMembersProp
         }
       }
 
-      // Filter out users who are already members or the owner
       const memberIds = currentMembers.map(m => m.user_id);
       const available = availableProfiles.filter(
         user => !memberIds.includes(user.id) && user.id !== projectOwnerId
@@ -186,6 +191,22 @@ export const ProjectMembers = ({ projectId, projectOwnerId }: ProjectMembersProp
       setAvailableUsers(available);
     } catch (error: any) {
       console.error("Erro ao buscar usuários disponíveis:", error);
+    }
+  };
+
+  const fetchInvitations = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("project_invitations")
+        .select("*")
+        .eq("project_id", projectId)
+        .eq("status", "pending")
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+      setInvitations(data || []);
+    } catch (error: any) {
+      console.error("Erro ao buscar convites:", error);
     }
   };
 
@@ -206,7 +227,6 @@ export const ProjectMembers = ({ projectId, projectOwnerId }: ProjectMembersProp
 
       if (error) throw error;
 
-      // Notify the new member
       const selectedUser = availableUsers.find(u => u.id === selectedUserId);
       await supabase.from("notifications").insert({
         user_id: selectedUserId,
@@ -247,7 +267,6 @@ export const ProjectMembers = ({ projectId, projectOwnerId }: ProjectMembersProp
 
       if (error) throw error;
 
-      // Notify the removed member
       if (memberToRemove) {
         await supabase.from("notifications").insert({
           user_id: memberToRemove.user_id,
@@ -273,13 +292,87 @@ export const ProjectMembers = ({ projectId, projectOwnerId }: ProjectMembersProp
     }
   };
 
+  const handleGenerateInviteLink = async () => {
+    setGeneratingLink(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Usuário não autenticado");
+
+      const { data, error } = await supabase
+        .from("project_invitations")
+        .insert({
+          project_id: projectId,
+          created_by: user.id,
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      toast({
+        title: "Link gerado!",
+        description: "O link de convite foi criado com sucesso.",
+      });
+
+      fetchInvitations();
+      
+      const inviteUrl = `${window.location.origin}/invite/${data.token}`;
+      await navigator.clipboard.writeText(inviteUrl);
+      setCopiedToken(data.token);
+      setTimeout(() => setCopiedToken(null), 3000);
+    } catch (error: any) {
+      toast({
+        title: "Erro ao gerar link",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setGeneratingLink(false);
+    }
+  };
+
+  const handleCopyInviteLink = async (token: string) => {
+    const inviteUrl = `${window.location.origin}/invite/${token}`;
+    await navigator.clipboard.writeText(inviteUrl);
+    setCopiedToken(token);
+    setTimeout(() => setCopiedToken(null), 3000);
+    toast({
+      title: "Link copiado!",
+      description: "O link de convite foi copiado para a área de transferência.",
+    });
+  };
+
+  const handleRevokeInvitation = async (invitationId: string) => {
+    try {
+      const { error } = await supabase
+        .from("project_invitations")
+        .update({ status: "revoked" })
+        .eq("id", invitationId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Convite revogado",
+        description: "O link de convite foi invalidado.",
+      });
+
+      fetchInvitations();
+    } catch (error: any) {
+      toast({
+        title: "Erro ao revogar convite",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  };
+
   const getInitials = (name: string) => {
-    return name
-      .split(" ")
-      .map(n => n[0])
-      .join("")
-      .toUpperCase()
-      .slice(0, 2);
+    return name.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2);
+  };
+
+  const formatExpirationDate = (dateStr: string) => {
+    const date = new Date(dateStr);
+    return date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
   };
 
   const isOwner = currentUserId === projectOwnerId;
@@ -300,64 +393,129 @@ export const ProjectMembers = ({ projectId, projectOwnerId }: ProjectMembersProp
                 Adicionar
               </Button>
             </DialogTrigger>
-            <DialogContent>
+            <DialogContent className="max-w-md">
               <DialogHeader>
-                <DialogTitle>Adicionar Membro ao Projeto</DialogTitle>
+                <DialogTitle>Adicionar Colaborador</DialogTitle>
               </DialogHeader>
-              <div className="space-y-4 pt-4">
-                <div className="space-y-2">
-                  <Label>Selecione um usuário</Label>
-                  <Select value={selectedUserId} onValueChange={setSelectedUserId}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecione um usuário" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {availableUsers.length === 0 ? (
-                        <SelectItem value="none" disabled>
-                          Nenhum usuário disponível
-                        </SelectItem>
-                      ) : (
-                        availableUsers.map((user) => (
-                          <SelectItem key={user.id} value={user.id}>
-                            {user.full_name}
+              <Tabs defaultValue="team" className="w-full">
+                <TabsList className="grid w-full grid-cols-2">
+                  <TabsTrigger value="team">Da Equipe</TabsTrigger>
+                  <TabsTrigger value="invite">Por Link</TabsTrigger>
+                </TabsList>
+                
+                <TabsContent value="team" className="space-y-4 pt-4">
+                  <div className="space-y-2">
+                    <Label>Selecione um usuário da sua equipe</Label>
+                    <Select value={selectedUserId} onValueChange={setSelectedUserId}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione um usuário" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {availableUsers.length === 0 ? (
+                          <SelectItem value="none" disabled>
+                            Nenhum usuário disponível na sua equipe
                           </SelectItem>
-                        ))
-                      )}
-                    </SelectContent>
-                  </Select>
-                </div>
+                        ) : (
+                          availableUsers.map((user) => (
+                            <SelectItem key={user.id} value={user.id}>
+                              {user.full_name}
+                            </SelectItem>
+                          ))
+                        )}
+                      </SelectContent>
+                    </Select>
+                    {availableUsers.length === 0 && (
+                      <p className="text-xs text-muted-foreground">
+                        Adicione usuários à sua equipe na página de Equipes ou use o convite por link.
+                      </p>
+                    )}
+                  </div>
 
-                <div className="space-y-2">
-                  <Label>Função no projeto</Label>
-                  <Select value={selectedRole} onValueChange={setSelectedRole}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="collaborator">Colaborador</SelectItem>
-                      <SelectItem value="viewer">Visualizador</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <p className="text-xs text-muted-foreground">
-                    Colaboradores podem interagir com tarefas e comunicações. Visualizadores apenas visualizam.
-                  </p>
-                </div>
+                  <div className="space-y-2">
+                    <Label>Função no projeto</Label>
+                    <Select value={selectedRole} onValueChange={setSelectedRole}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="collaborator">Colaborador</SelectItem>
+                        <SelectItem value="viewer">Visualizador</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
 
-                <div className="flex justify-end gap-2 pt-4">
-                  <Button variant="outline" onClick={() => setDialogOpen(false)}>
-                    Cancelar
-                  </Button>
-                  <Button onClick={handleAddMember} disabled={!selectedUserId}>
-                    Adicionar
-                  </Button>
-                </div>
-              </div>
+                  <div className="flex justify-end gap-2 pt-4">
+                    <Button variant="outline" onClick={() => setDialogOpen(false)}>
+                      Cancelar
+                    </Button>
+                    <Button onClick={handleAddMember} disabled={!selectedUserId}>
+                      Adicionar
+                    </Button>
+                  </div>
+                </TabsContent>
+
+                <TabsContent value="invite" className="space-y-4 pt-4">
+                  <div className="text-center space-y-4">
+                    <div className="p-4 rounded-lg bg-muted/50">
+                      <Link className="h-8 w-8 mx-auto mb-2 text-primary" />
+                      <p className="text-sm text-muted-foreground">
+                        Gere um link de convite para compartilhar com qualquer pessoa. 
+                        O link expira em 7 dias.
+                      </p>
+                    </div>
+                    
+                    <Button 
+                      onClick={handleGenerateInviteLink} 
+                      className="w-full gap-2"
+                      disabled={generatingLink}
+                    >
+                      <Link className="h-4 w-4" />
+                      {generatingLink ? "Gerando..." : "Gerar Link de Convite"}
+                    </Button>
+
+                    {invitations.length > 0 && (
+                      <div className="space-y-2 pt-4 border-t">
+                        <p className="text-sm font-medium text-left">Links ativos:</p>
+                        {invitations.map((inv) => (
+                          <div key={inv.id} className="flex items-center justify-between p-2 rounded-lg bg-muted/30 text-sm">
+                            <div className="flex items-center gap-2 text-muted-foreground">
+                              <Clock className="h-3 w-3" />
+                              <span>Expira em {formatExpirationDate(inv.expires_at)}</span>
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <Button
+                                size="icon"
+                                variant="ghost"
+                                className="h-7 w-7"
+                                onClick={() => handleCopyInviteLink(inv.token)}
+                              >
+                                {copiedToken === inv.token ? (
+                                  <Check className="h-3 w-3 text-success" />
+                                ) : (
+                                  <Copy className="h-3 w-3" />
+                                )}
+                              </Button>
+                              <Button
+                                size="icon"
+                                variant="ghost"
+                                className="h-7 w-7"
+                                onClick={() => handleRevokeInvitation(inv.id)}
+                              >
+                                <XCircle className="h-3 w-3 text-destructive" />
+                              </Button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </TabsContent>
+              </Tabs>
             </DialogContent>
           </Dialog>
         )}
       </CardHeader>
       <CardContent className="space-y-3">
-        {/* Owner */}
         {ownerProfile && (
           <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
             <div className="flex items-center gap-3">
@@ -377,7 +535,6 @@ export const ProjectMembers = ({ projectId, projectOwnerId }: ProjectMembersProp
           </div>
         )}
 
-        {/* Members */}
         {loading ? (
           <p className="text-center text-muted-foreground py-4">Carregando...</p>
         ) : members.length === 0 ? (

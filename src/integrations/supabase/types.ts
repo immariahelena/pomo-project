@@ -188,6 +188,53 @@ export type Database = {
         }
         Relationships: []
       }
+      project_invitations: {
+        Row: {
+          accepted_at: string | null
+          accepted_by: string | null
+          created_at: string
+          created_by: string
+          email: string | null
+          expires_at: string
+          id: string
+          project_id: string
+          status: string
+          token: string
+        }
+        Insert: {
+          accepted_at?: string | null
+          accepted_by?: string | null
+          created_at?: string
+          created_by: string
+          email?: string | null
+          expires_at?: string
+          id?: string
+          project_id: string
+          status?: string
+          token?: string
+        }
+        Update: {
+          accepted_at?: string | null
+          accepted_by?: string | null
+          created_at?: string
+          created_by?: string
+          email?: string | null
+          expires_at?: string
+          id?: string
+          project_id?: string
+          status?: string
+          token?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_invitations_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       project_members: {
         Row: {
           added_by: string | null
@@ -525,6 +572,11 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      accept_project_invitation: {
+        Args: { _token: string; _user_id: string }
+        Returns: Json
+      }
+      get_invitation_by_token: { Args: { _token: string }; Returns: Json }
       get_team_users_for_manager: {
         Args: { _manager_id: string }
         Returns: {

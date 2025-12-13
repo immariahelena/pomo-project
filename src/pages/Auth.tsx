@@ -47,7 +47,14 @@ const Auth = () => {
     const checkSession = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
-        navigate("/dashboard");
+        // Check for pending invite
+        const pendingToken = localStorage.getItem('pendingInviteToken');
+        if (pendingToken) {
+          localStorage.removeItem('pendingInviteToken');
+          navigate(`/invite/${pendingToken}`);
+        } else {
+          navigate("/dashboard");
+        }
       }
     };
     checkSession();
@@ -125,10 +132,17 @@ const Auth = () => {
 
         toast({
           title: "Login realizado com sucesso!",
-          description: "Redirecionando para o dashboard...",
+          description: "Redirecionando...",
         });
 
-        navigate("/dashboard");
+        // Check for pending invite
+        const pendingToken = localStorage.getItem('pendingInviteToken');
+        if (pendingToken) {
+          localStorage.removeItem('pendingInviteToken');
+          navigate(`/invite/${pendingToken}`);
+        } else {
+          navigate("/dashboard");
+        }
       } else {
         // Validate signup inputs
         const validation = signupSchema.safeParse({
