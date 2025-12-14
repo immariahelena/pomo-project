@@ -21,9 +21,17 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Users, UserPlus, Trash2, Crown, Link, Copy, Check, Clock, XCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useUserRole } from "@/hooks/useUserRole";
+import { Label } from "@/components/ui/label";
 
 interface ProjectMembersProps {
   projectId: string;
@@ -53,6 +61,7 @@ interface Invitation {
   status: string;
   expires_at: string;
   created_at: string;
+  role: string;
 }
 
 export const ProjectMembers = ({ projectId, projectOwnerId }: ProjectMembersProps) => {
@@ -67,6 +76,7 @@ export const ProjectMembers = ({ projectId, projectOwnerId }: ProjectMembersProp
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [copiedToken, setCopiedToken] = useState<string | null>(null);
   const [generatingLink, setGeneratingLink] = useState(false);
+  const [selectedRole, setSelectedRole] = useState<string>("collaborator");
 
   useEffect(() => {
     fetchCurrentUser();
@@ -190,6 +200,7 @@ export const ProjectMembers = ({ projectId, projectOwnerId }: ProjectMembersProp
         .insert({
           project_id: projectId,
           created_by: user.id,
+          role: selectedRole,
         })
         .select()
         .single();
@@ -198,7 +209,7 @@ export const ProjectMembers = ({ projectId, projectOwnerId }: ProjectMembersProp
 
       toast({
         title: "Link gerado!",
-        description: "O link de convite foi criado com sucesso.",
+        description: `Link de convite para ${selectedRole === "collaborator" ? "colaborador" : "visualizador"} criado.`,
       });
 
       fetchInvitations();
@@ -294,6 +305,24 @@ export const ProjectMembers = ({ projectId, projectOwnerId }: ProjectMembersProp
                     </p>
                   </div>
                   
+                  <div className="space-y-2 text-left">
+                    <Label htmlFor="role-select">Função do convidado</Label>
+                    <Select value={selectedRole} onValueChange={setSelectedRole}>
+                      <SelectTrigger id="role-select">
+                        <SelectValue placeholder="Selecione a função" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="collaborator">Colaborador</SelectItem>
+                        <SelectItem value="viewer">Visualizador</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <p className="text-xs text-muted-foreground">
+                      {selectedRole === "collaborator" 
+                        ? "Colaboradores podem editar tarefas e enviar mensagens."
+                        : "Visualizadores podem apenas ver o projeto, sem editar."}
+                    </p>
+                  </div>
+                  
                   <Button 
                     onClick={handleGenerateInviteLink} 
                     className="w-full gap-2"
@@ -308,9 +337,14 @@ export const ProjectMembers = ({ projectId, projectOwnerId }: ProjectMembersProp
                       <p className="text-sm font-medium text-left">Links ativos:</p>
                       {invitations.map((inv) => (
                         <div key={inv.id} className="flex items-center justify-between p-2 rounded-lg bg-muted/30 text-sm">
-                          <div className="flex items-center gap-2 text-muted-foreground">
-                            <Clock className="h-3 w-3" />
-                            <span>Expira em {formatExpirationDate(inv.expires_at)}</span>
+                          <div className="flex flex-col gap-0.5">
+                            <div className="flex items-center gap-2 text-muted-foreground">
+                              <Clock className="h-3 w-3" />
+                              <span>Expira em {formatExpirationDate(inv.expires_at)}</span>
+                            </div>
+                            <Badge variant="outline" className="w-fit text-xs">
+                              {inv.role === "collaborator" ? "Colaborador" : "Visualizador"}
+                            </Badge>
                           </div>
                           <div className="flex items-center gap-1">
                             <Button

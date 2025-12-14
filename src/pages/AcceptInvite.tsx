@@ -13,6 +13,7 @@ interface InvitationInfo {
   project_name?: string;
   created_by_name?: string;
   expires_at?: string;
+  role?: string;
 }
 
 const AcceptInvite = () => {
@@ -138,7 +139,7 @@ const AcceptInvite = () => {
           </div>
           <CardTitle>Convite para Projeto</CardTitle>
           <CardDescription>
-            Você foi convidado para colaborar em um projeto
+            Você foi convidado como <span className="font-medium">{invitation.role === "collaborator" ? "colaborador" : "visualizador"}</span>
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
@@ -146,6 +147,9 @@ const AcceptInvite = () => {
             <div className="p-4 rounded-lg bg-muted/50">
               <p className="text-sm text-muted-foreground mb-1">Projeto</p>
               <p className="font-semibold text-lg">{invitation.project_name}</p>
+              <p className="text-xs text-muted-foreground mt-2">
+                Função: <span className="font-medium">{invitation.role === "collaborator" ? "Colaborador" : "Visualizador"}</span>
+              </p>
             </div>
             <div className="text-sm text-muted-foreground">
               <p>Convidado por: <span className="font-medium text-foreground">{invitation.created_by_name}</span></p>
