@@ -198,6 +198,7 @@ export type Database = {
           expires_at: string
           id: string
           project_id: string
+          role: string
           status: string
           token: string
         }
@@ -210,6 +211,7 @@ export type Database = {
           expires_at?: string
           id?: string
           project_id: string
+          role?: string
           status?: string
           token?: string
         }
@@ -222,6 +224,7 @@ export type Database = {
           expires_at?: string
           id?: string
           project_id?: string
+          role?: string
           status?: string
           token?: string
         }
