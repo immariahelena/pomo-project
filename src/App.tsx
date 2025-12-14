@@ -20,7 +20,6 @@ import AdminSupport from "./pages/AdminSupport";
 import NotFound from "./pages/NotFound";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
-import Teams from "./pages/Teams";
 import AcceptInvite from "./pages/AcceptInvite";
 
 const queryClient = new QueryClient();
@@ -46,7 +45,6 @@ const App = () => (
           <Route path="/contact" element={<Contact />} />
           <Route path="/test-crud" element={<TestCrud />} />
           <Route path="/admin/users" element={<UserManagement />} />
-          <Route path="/teams" element={<Teams />} />
           <Route path="/support" element={<Support />} />
           <Route path="/admin-support" element={<AdminSupport />} />
           <Route path="/invite/:token" element={<AcceptInvite />} />

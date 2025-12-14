@@ -1,5 +1,5 @@
 import { useNavigate, useLocation } from "react-router-dom";
-import { Home, Video, Trophy, Bell, Settings, LogOut, Shield, HelpCircle, Users } from "lucide-react";
+import { Home, Video, Trophy, Bell, Settings, LogOut, Shield, HelpCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -12,8 +12,7 @@ const Sidebar = () => {
   const location = useLocation();
   const { toast } = useToast();
   const [unreadCount, setUnreadCount] = useState(0);
-  const { isAdmin, isManager } = useUserRole();
-  const canManageTeams = isAdmin || isManager;
+  const { isAdmin } = useUserRole();
 
   useEffect(() => {
     fetchUnreadCount();
@@ -70,7 +69,6 @@ const Sidebar = () => {
   const menuItems = [
     { icon: Home, path: "/dashboard", label: "Dashboard" },
     { icon: Video, path: "/projects", label: "Projetos" },
-    ...(canManageTeams ? [{ icon: Users, path: "/teams", label: "Equipes" }] : []),
     { icon: Trophy, path: "/achievements", label: "Conquistas" },
     { icon: Bell, path: "/notifications", label: "Notificações", badge: unreadCount },
     ...(isAdmin ? [] : [{ icon: HelpCircle, path: "/support", label: "Suporte" }]),
