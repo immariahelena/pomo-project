@@ -2,7 +2,6 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -12,13 +11,6 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -32,7 +24,6 @@ import {
 import { Users, UserPlus, Trash2, Crown, Link, Copy, Check, Clock, XCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useUserRole } from "@/hooks/useUserRole";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface ProjectMembersProps {
   projectId: string;
@@ -68,12 +59,9 @@ export const ProjectMembers = ({ projectId, projectOwnerId }: ProjectMembersProp
   const { toast } = useToast();
   const { canManageProjects } = useUserRole();
   const [members, setMembers] = useState<Member[]>([]);
-  const [availableUsers, setAvailableUsers] = useState<AvailableUser[]>([]);
   const [invitations, setInvitations] = useState<Invitation[]>([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [selectedUserId, setSelectedUserId] = useState("");
-  const [selectedRole, setSelectedRole] = useState("collaborator");
   const [removeMemberId, setRemoveMemberId] = useState<string | null>(null);
   const [ownerProfile, setOwnerProfile] = useState<AvailableUser | null>(null);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
@@ -130,67 +118,10 @@ export const ProjectMembers = ({ projectId, projectOwnerId }: ProjectMembersProp
       );
 
       setMembers(membersWithProfiles);
-      await fetchAvailableUsers(membersWithProfiles);
     } catch (error: any) {
       console.error("Erro ao buscar membros:", error);
     } finally {
       setLoading(false);
-    }
-  };
-
-  const fetchAvailableUsers = async (currentMembers: Member[]) => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-
-      const { data: roleData } = await supabase
-        .from("user_roles")
-        .select("role")
-        .eq("user_id", user.id)
-        .maybeSingle();
-
-      const isAdmin = roleData?.role === 'admin';
-      let availableProfiles: AvailableUser[] = [];
-
-      if (isAdmin) {
-        const { data, error } = await supabase
-          .from("profiles")
-          .select("id, full_name, avatar_url")
-          .order("full_name");
-
-        if (error) throw error;
-        availableProfiles = data || [];
-      } else {
-        const { data: teamUserIds, error: teamError } = await supabase
-          .rpc('get_team_users_for_manager', { _manager_id: user.id });
-
-        if (teamError) {
-          console.error("Erro ao buscar usuários da equipe:", teamError);
-          setAvailableUsers([]);
-          return;
-        }
-
-        if (teamUserIds && teamUserIds.length > 0) {
-          const userIds = teamUserIds.map((r: { user_id: string }) => r.user_id);
-          const { data, error } = await supabase
-            .from("profiles")
-            .select("id, full_name, avatar_url")
-            .in("id", userIds)
-            .order("full_name");
-
-          if (error) throw error;
-          availableProfiles = data || [];
-        }
-      }
-
-      const memberIds = currentMembers.map(m => m.user_id);
-      const available = availableProfiles.filter(
-        user => !memberIds.includes(user.id) && user.id !== projectOwnerId
-      );
-
-      setAvailableUsers(available);
-    } catch (error: any) {
-      console.error("Erro ao buscar usuários disponíveis:", error);
     }
   };
 
@@ -207,50 +138,6 @@ export const ProjectMembers = ({ projectId, projectOwnerId }: ProjectMembersProp
       setInvitations(data || []);
     } catch (error: any) {
       console.error("Erro ao buscar convites:", error);
-    }
-  };
-
-  const handleAddMember = async () => {
-    if (!selectedUserId) return;
-
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      
-      const { error } = await supabase
-        .from("project_members")
-        .insert({
-          project_id: projectId,
-          user_id: selectedUserId,
-          role: selectedRole,
-          added_by: user?.id,
-        });
-
-      if (error) throw error;
-
-      const selectedUser = availableUsers.find(u => u.id === selectedUserId);
-      await supabase.from("notifications").insert({
-        user_id: selectedUserId,
-        title: "Você foi adicionado a um projeto",
-        message: `Você foi adicionado como ${selectedRole === 'collaborator' ? 'colaborador' : 'visualizador'} em um projeto.`,
-        type: "info",
-        link: `/projects/${projectId}`,
-      });
-
-      toast({
-        title: "Membro adicionado",
-        description: `${selectedUser?.full_name} foi adicionado ao projeto.`,
-      });
-
-      setDialogOpen(false);
-      setSelectedUserId("");
-      setSelectedRole("collaborator");
-      fetchMembers();
-    } catch (error: any) {
-      toast({
-        title: "Erro ao adicionar membro",
-        description: error.message,
-        variant: "destructive",
-      });
     }
   };
 
@@ -390,127 +277,69 @@ export const ProjectMembers = ({ projectId, projectOwnerId }: ProjectMembersProp
             <DialogTrigger asChild>
               <Button size="sm" className="gap-2">
                 <UserPlus className="h-4 w-4" />
-                Adicionar
+                Convidar
               </Button>
             </DialogTrigger>
             <DialogContent className="max-w-md">
               <DialogHeader>
-                <DialogTitle>Adicionar Colaborador</DialogTitle>
+                <DialogTitle>Convidar Colaborador</DialogTitle>
               </DialogHeader>
-              <Tabs defaultValue="team" className="w-full">
-                <TabsList className="grid w-full grid-cols-2">
-                  <TabsTrigger value="team">Da Equipe</TabsTrigger>
-                  <TabsTrigger value="invite">Por Link</TabsTrigger>
-                </TabsList>
-                
-                <TabsContent value="team" className="space-y-4 pt-4">
-                  <div className="space-y-2">
-                    <Label>Selecione um usuário da sua equipe</Label>
-                    <Select value={selectedUserId} onValueChange={setSelectedUserId}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione um usuário" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {availableUsers.length === 0 ? (
-                          <SelectItem value="none" disabled>
-                            Nenhum usuário disponível na sua equipe
-                          </SelectItem>
-                        ) : (
-                          availableUsers.map((user) => (
-                            <SelectItem key={user.id} value={user.id}>
-                              {user.full_name}
-                            </SelectItem>
-                          ))
-                        )}
-                      </SelectContent>
-                    </Select>
-                    {availableUsers.length === 0 && (
-                      <p className="text-xs text-muted-foreground">
-                        Adicione usuários à sua equipe na página de Equipes ou use o convite por link.
-                      </p>
-                    )}
+              <div className="space-y-4 pt-4">
+                <div className="text-center space-y-4">
+                  <div className="p-4 rounded-lg bg-muted/50">
+                    <Link className="h-8 w-8 mx-auto mb-2 text-primary" />
+                    <p className="text-sm text-muted-foreground">
+                      Gere um link de convite para compartilhar com qualquer pessoa. 
+                      O link expira em 7 dias.
+                    </p>
                   </div>
+                  
+                  <Button 
+                    onClick={handleGenerateInviteLink} 
+                    className="w-full gap-2"
+                    disabled={generatingLink}
+                  >
+                    <Link className="h-4 w-4" />
+                    {generatingLink ? "Gerando..." : "Gerar Link de Convite"}
+                  </Button>
 
-                  <div className="space-y-2">
-                    <Label>Função no projeto</Label>
-                    <Select value={selectedRole} onValueChange={setSelectedRole}>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="collaborator">Colaborador</SelectItem>
-                        <SelectItem value="viewer">Visualizador</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="flex justify-end gap-2 pt-4">
-                    <Button variant="outline" onClick={() => setDialogOpen(false)}>
-                      Cancelar
-                    </Button>
-                    <Button onClick={handleAddMember} disabled={!selectedUserId}>
-                      Adicionar
-                    </Button>
-                  </div>
-                </TabsContent>
-
-                <TabsContent value="invite" className="space-y-4 pt-4">
-                  <div className="text-center space-y-4">
-                    <div className="p-4 rounded-lg bg-muted/50">
-                      <Link className="h-8 w-8 mx-auto mb-2 text-primary" />
-                      <p className="text-sm text-muted-foreground">
-                        Gere um link de convite para compartilhar com qualquer pessoa. 
-                        O link expira em 7 dias.
-                      </p>
-                    </div>
-                    
-                    <Button 
-                      onClick={handleGenerateInviteLink} 
-                      className="w-full gap-2"
-                      disabled={generatingLink}
-                    >
-                      <Link className="h-4 w-4" />
-                      {generatingLink ? "Gerando..." : "Gerar Link de Convite"}
-                    </Button>
-
-                    {invitations.length > 0 && (
-                      <div className="space-y-2 pt-4 border-t">
-                        <p className="text-sm font-medium text-left">Links ativos:</p>
-                        {invitations.map((inv) => (
-                          <div key={inv.id} className="flex items-center justify-between p-2 rounded-lg bg-muted/30 text-sm">
-                            <div className="flex items-center gap-2 text-muted-foreground">
-                              <Clock className="h-3 w-3" />
-                              <span>Expira em {formatExpirationDate(inv.expires_at)}</span>
-                            </div>
-                            <div className="flex items-center gap-1">
-                              <Button
-                                size="icon"
-                                variant="ghost"
-                                className="h-7 w-7"
-                                onClick={() => handleCopyInviteLink(inv.token)}
-                              >
-                                {copiedToken === inv.token ? (
-                                  <Check className="h-3 w-3 text-success" />
-                                ) : (
-                                  <Copy className="h-3 w-3" />
-                                )}
-                              </Button>
-                              <Button
-                                size="icon"
-                                variant="ghost"
-                                className="h-7 w-7"
-                                onClick={() => handleRevokeInvitation(inv.id)}
-                              >
-                                <XCircle className="h-3 w-3 text-destructive" />
-                              </Button>
-                            </div>
+                  {invitations.length > 0 && (
+                    <div className="space-y-2 pt-4 border-t">
+                      <p className="text-sm font-medium text-left">Links ativos:</p>
+                      {invitations.map((inv) => (
+                        <div key={inv.id} className="flex items-center justify-between p-2 rounded-lg bg-muted/30 text-sm">
+                          <div className="flex items-center gap-2 text-muted-foreground">
+                            <Clock className="h-3 w-3" />
+                            <span>Expira em {formatExpirationDate(inv.expires_at)}</span>
                           </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                </TabsContent>
-              </Tabs>
+                          <div className="flex items-center gap-1">
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              className="h-7 w-7"
+                              onClick={() => handleCopyInviteLink(inv.token)}
+                            >
+                              {copiedToken === inv.token ? (
+                                <Check className="h-3 w-3 text-success" />
+                              ) : (
+                                <Copy className="h-3 w-3" />
+                              )}
+                            </Button>
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              className="h-7 w-7"
+                              onClick={() => handleRevokeInvitation(inv.id)}
+                            >
+                              <XCircle className="h-3 w-3 text-destructive" />
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
             </DialogContent>
           </Dialog>
         )}
