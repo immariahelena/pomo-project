@@ -214,13 +214,41 @@ const ProjectDetails = () => {
 
   const fetchProfiles = async () => {
     try {
-      const { data, error } = await supabase
+      // Buscar membros do projeto
+      const { data: members, error: membersError } = await supabase
+        .from("project_members")
+        .select("user_id")
+        .eq("project_id", id);
+
+      if (membersError) throw membersError;
+
+      // Buscar criador do projeto
+      const { data: projectData, error: projectError } = await supabase
+        .from("projects")
+        .select("created_by")
+        .eq("id", id)
+        .single();
+
+      if (projectError) throw projectError;
+
+      // Combinar IDs únicos: criador + membros
+      const memberIds = members?.map(m => m.user_id) || [];
+      const allIds = [...new Set([projectData.created_by, ...memberIds])];
+
+      if (allIds.length === 0) {
+        setProfiles([]);
+        return;
+      }
+
+      // Buscar perfis apenas dos membros do projeto
+      const { data: profilesData, error: profilesError } = await supabase
         .from("profiles")
         .select("id, full_name")
+        .in("id", allIds)
         .order("full_name");
 
-      if (error) throw error;
-      setProfiles(data || []);
+      if (profilesError) throw profilesError;
+      setProfiles(profilesData || []);
     } catch (error: any) {
       console.error("Erro ao carregar perfis:", error);
     }
