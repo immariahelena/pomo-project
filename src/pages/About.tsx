@@ -34,7 +34,7 @@ const About = () => {
       <header className="border-b border-border bg-card">
         <div className="container mx-auto px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className="w-12 h-12 bg-primary rounded-full flex items-center justify-center">
+            <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center">
               <img src="/pomo.png" alt="Pomo Projects" className="w-10 h-10" />
             </div>
             <span className="text-2xl font-bold">Pomo Projects</span>
