@@ -25,7 +25,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { useUserRole } from "@/hooks/useUserRole";
-import { Shield, Users, Trash2 } from "lucide-react";
+import { Shield, Users, Trash2, CheckCircle, XCircle, Clock } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -43,6 +43,8 @@ type UserWithRole = {
   full_name: string;
   role: string;
   created_at: string;
+  approved: boolean;
+  approved_at: string | null;
 };
 
 const UserManagement = () => {
@@ -183,6 +185,38 @@ const UserManagement = () => {
     }
   };
 
+  const handleApproveUser = async (userId: string, approve: boolean) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      const { error } = await supabase
+        .from("profiles")
+        .update({
+          approved: approve,
+          approved_at: approve ? new Date().toISOString() : null,
+          approved_by: approve ? user?.id : null,
+        })
+        .eq("id", userId);
+
+      if (error) throw error;
+
+      toast({
+        title: approve ? "Usuário aprovado!" : "Aprovação revogada!",
+        description: approve 
+          ? "O usuário agora pode acessar o sistema." 
+          : "O acesso do usuário foi revogado.",
+      });
+
+      fetchUsers();
+    } catch (error: any) {
+      toast({
+        title: "Erro ao atualizar aprovação",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  };
+
   const getRoleBadgeVariant = (role: string) => {
     switch (role) {
       case "admin":
@@ -211,6 +245,23 @@ const UserManagement = () => {
       default:
         return role;
     }
+  };
+
+  const getApprovalBadge = (approved: boolean) => {
+    if (approved) {
+      return (
+        <Badge variant="default" className="bg-green-600">
+          <CheckCircle className="h-3 w-3 mr-1" />
+          Aprovado
+        </Badge>
+      );
+    }
+    return (
+      <Badge variant="secondary" className="bg-yellow-600 text-white">
+        <Clock className="h-3 w-3 mr-1" />
+        Pendente
+      </Badge>
+    );
   };
 
   const filteredUsers = users.filter(
@@ -268,6 +319,7 @@ const UserManagement = () => {
                     <TableRow>
                       <TableHead>Nome</TableHead>
                       <TableHead>Email</TableHead>
+                      <TableHead>Status</TableHead>
                       <TableHead>Função</TableHead>
                       <TableHead>Cadastrado em</TableHead>
                       <TableHead className="text-right">Ações</TableHead>
@@ -280,6 +332,9 @@ const UserManagement = () => {
                           {user.full_name}
                         </TableCell>
                         <TableCell>{user.email}</TableCell>
+                        <TableCell>
+                          {getApprovalBadge(user.approved)}
+                        </TableCell>
                         <TableCell>
                           {editingUserId === user.id ? (
                             <div className="flex items-center gap-2">
@@ -331,13 +386,34 @@ const UserManagement = () => {
                           {new Date(user.created_at).toLocaleDateString("pt-BR")}
                         </TableCell>
                         <TableCell className="text-right">
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => setDeleteUserId(user.id)}
-                          >
-                            <Trash2 className="h-4 w-4 text-destructive" />
-                          </Button>
+                          <div className="flex items-center justify-end gap-1">
+                            {user.approved ? (
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => handleApproveUser(user.id, false)}
+                                title="Revogar acesso"
+                              >
+                                <XCircle className="h-4 w-4 text-yellow-600" />
+                              </Button>
+                            ) : (
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => handleApproveUser(user.id, true)}
+                                title="Aprovar acesso"
+                              >
+                                <CheckCircle className="h-4 w-4 text-green-600" />
+                              </Button>
+                            )}
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => setDeleteUserId(user.id)}
+                            >
+                              <Trash2 className="h-4 w-4 text-destructive" />
+                            </Button>
+                          </div>
                         </TableCell>
                       </TableRow>
                     ))}

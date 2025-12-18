@@ -52,7 +52,7 @@ serve(async (req) => {
     // Buscar profiles
     const { data: profiles } = await supabaseClient
       .from('profiles')
-      .select('id, full_name, created_at');
+      .select('id, full_name, created_at, approved, approved_at');
 
     // Buscar roles
     const { data: roles } = await supabaseClient
@@ -70,6 +70,8 @@ serve(async (req) => {
         full_name: profile?.full_name || 'Sem nome',
         role: roleRecord?.role || 'collaborator',
         created_at: authUser.created_at,
+        approved: profile?.approved ?? false,
+        approved_at: profile?.approved_at,
       };
     });
 

@@ -166,6 +166,9 @@ export type Database = {
       }
       profiles: {
         Row: {
+          approved: boolean | null
+          approved_at: string | null
+          approved_by: string | null
           avatar_url: string | null
           created_at: string | null
           full_name: string
@@ -173,6 +176,9 @@ export type Database = {
           updated_at: string | null
         }
         Insert: {
+          approved?: boolean | null
+          approved_at?: string | null
+          approved_by?: string | null
           avatar_url?: string | null
           created_at?: string | null
           full_name: string
@@ -180,6 +186,9 @@ export type Database = {
           updated_at?: string | null
         }
         Update: {
+          approved?: boolean | null
+          approved_at?: string | null
+          approved_by?: string | null
           avatar_url?: string | null
           created_at?: string | null
           full_name?: string
@@ -605,6 +614,7 @@ export type Database = {
         Args: { _project_id: string; _user_id: string }
         Returns: boolean
       }
+      is_user_approved: { Args: { _user_id: string }; Returns: boolean }
     }
     Enums: {
       app_role: "admin" | "manager" | "collaborator" | "client"
