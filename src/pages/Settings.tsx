@@ -43,7 +43,6 @@ const Settings = () => {
         .eq("id", user.id)
         .single();
 
-      // Fetch user role from user_roles table
       const { data: rolesData } = await supabase
         .from("user_roles")
         .select("role")
@@ -74,7 +73,6 @@ const Settings = () => {
       const file = event.target.files?.[0];
       if (!file) return;
 
-      // Validate file type
       if (!file.type.startsWith('image/')) {
         toast({
           title: "Erro",
@@ -84,7 +82,6 @@ const Settings = () => {
         return;
       }
 
-      // Validate file size (max 5MB)
       if (file.size > 5 * 1024 * 1024) {
         toast({
           title: "Erro",
@@ -100,7 +97,6 @@ const Settings = () => {
       const fileExt = file.name.split('.').pop();
       const filePath = `${user.id}/avatar.${fileExt}`;
 
-      // Delete old avatar if exists
       if (profile.avatar_url) {
         const oldPath = profile.avatar_url.split('/').pop();
         if (oldPath) {
@@ -108,19 +104,16 @@ const Settings = () => {
         }
       }
 
-      // Upload new avatar
       const { error: uploadError } = await supabase.storage
         .from('avatars')
         .upload(filePath, file, { upsert: true });
 
       if (uploadError) throw uploadError;
 
-      // Get public URL
       const { data: { publicUrl } } = supabase.storage
         .from('avatars')
         .getPublicUrl(filePath);
 
-      // Update profile with new avatar URL
       const { error: updateError } = await supabase
         .from('profiles')
         .update({ avatar_url: publicUrl })
@@ -186,30 +179,30 @@ const Settings = () => {
     <div className="min-h-screen flex bg-background">
       <Sidebar />
       
-      <main className="flex-1 overflow-auto">
+      <main className="flex-1 overflow-auto w-full">
         <Header />
 
-        <div className="p-8 space-y-6 max-w-4xl">
+        <div className="p-4 sm:p-6 lg:p-8 space-y-4 sm:space-y-6 max-w-4xl">
           <div>
-            <h1 className="text-3xl font-bold">Configurações</h1>
-            <p className="text-muted-foreground">
+            <h1 className="text-2xl sm:text-3xl font-bold">Configurações</h1>
+            <p className="text-sm sm:text-base text-muted-foreground">
               Gerencie suas informações pessoais e preferências
             </p>
           </div>
 
           <Card>
-            <CardHeader>
-              <CardTitle>Perfil</CardTitle>
+            <CardHeader className="p-4 sm:p-6">
+              <CardTitle className="text-lg sm:text-xl">Perfil</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="flex items-center gap-4">
-                <Avatar className="h-20 w-20">
+            <CardContent className="p-4 sm:p-6 pt-0 space-y-6">
+              <div className="flex flex-col sm:flex-row items-center gap-4">
+                <Avatar className="h-16 w-16 sm:h-20 sm:w-20">
                   {profile.avatar_url && <AvatarImage src={profile.avatar_url} alt={profile.full_name} />}
-                  <AvatarFallback className="bg-primary text-primary-foreground text-2xl">
+                  <AvatarFallback className="bg-primary text-primary-foreground text-xl sm:text-2xl">
                     {profile.full_name[0] || "U"}
                   </AvatarFallback>
                 </Avatar>
-                <div className="flex-1">
+                <div className="flex-1 text-center sm:text-left">
                   <p className="font-medium">{profile.full_name}</p>
                   <p className="text-sm text-muted-foreground">{profile.email}</p>
                   <div className="mt-2">
@@ -277,11 +270,11 @@ const Settings = () => {
                 </div>
               </div>
 
-              <div className="flex justify-end gap-2">
-                <Button variant="outline" onClick={() => navigate("/dashboard")}>
+              <div className="flex flex-col-reverse sm:flex-row justify-end gap-2">
+                <Button variant="outline" onClick={() => navigate("/dashboard")} className="w-full sm:w-auto">
                   Cancelar
                 </Button>
-                <Button onClick={handleSave} disabled={saving}>
+                <Button onClick={handleSave} disabled={saving} className="w-full sm:w-auto">
                   {saving ? "Salvando..." : "Salvar Alterações"}
                 </Button>
               </div>

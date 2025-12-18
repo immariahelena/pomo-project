@@ -5,7 +5,7 @@ import Sidebar from "@/components/layout/Sidebar";
 import Header from "@/components/layout/Header";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Bell, CheckCheck, Trash2 } from "lucide-react";
+import { Bell, CheckCheck } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -31,7 +31,6 @@ const Notifications = () => {
     checkAuth();
     fetchNotifications();
 
-    // Subscribe to realtime notifications
     const channel = supabase
       .channel("notifications-channel")
       .on(
@@ -162,14 +161,14 @@ const Notifications = () => {
     <div className="min-h-screen flex bg-background">
       <Sidebar />
       
-      <main className="flex-1 overflow-auto">
+      <main className="flex-1 overflow-auto w-full">
         <Header onSearch={setSearchQuery} />
 
-        <div className="p-8 space-y-6">
-          <div className="flex items-center justify-between">
+        <div className="p-4 sm:p-6 lg:p-8 space-y-4 sm:space-y-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
-              <h1 className="text-3xl font-bold">Notificações</h1>
-              <p className="text-muted-foreground">
+              <h1 className="text-2xl sm:text-3xl font-bold">Notificações</h1>
+              <p className="text-sm sm:text-base text-muted-foreground">
                 {unreadCount > 0
                   ? `Você tem ${unreadCount} notificação${unreadCount > 1 ? "ões" : ""} não lida${unreadCount > 1 ? "s" : ""}`
                   : "Você não tem notificações não lidas"}
@@ -177,18 +176,19 @@ const Notifications = () => {
             </div>
 
             {unreadCount > 0 && (
-              <Button onClick={markAllAsRead} variant="outline" className="gap-2">
+              <Button onClick={markAllAsRead} variant="outline" className="gap-2 w-full sm:w-auto">
                 <CheckCheck className="h-4 w-4" />
-                Marcar todas como lidas
+                <span className="hidden sm:inline">Marcar todas como lidas</span>
+                <span className="sm:hidden">Marcar todas</span>
               </Button>
             )}
           </div>
 
           {filteredNotifications.length === 0 ? (
             <Card>
-              <CardContent className="flex flex-col items-center justify-center py-16">
-                <Bell className="h-16 w-16 text-muted-foreground mb-4" />
-                <p className="text-lg text-muted-foreground">
+              <CardContent className="flex flex-col items-center justify-center py-12 sm:py-16">
+                <Bell className="h-12 w-12 sm:h-16 sm:w-16 text-muted-foreground mb-4" />
+                <p className="text-sm sm:text-lg text-muted-foreground text-center">
                   {searchQuery
                     ? "Nenhuma notificação encontrada com esse termo"
                     : "Nenhuma notificação ainda"}
@@ -196,7 +196,7 @@ const Notifications = () => {
               </CardContent>
             </Card>
           ) : (
-            <div className="space-y-4">
+            <div className="space-y-3 sm:space-y-4">
               {filteredNotifications.map((notification) => (
                 <Card
                   key={notification.id}
@@ -212,21 +212,21 @@ const Notifications = () => {
                     }
                   }}
                 >
-                  <CardContent className="p-6">
-                    <div className="flex items-start gap-4">
-                      <span className="text-2xl">
+                  <CardContent className="p-4 sm:p-6">
+                    <div className="flex items-start gap-3 sm:gap-4">
+                      <span className="text-xl sm:text-2xl">
                         {getNotificationIcon(notification.type)}
                       </span>
-                      <div className="flex-1">
-                        <div className="flex items-start justify-between">
-                          <div>
-                            <h3 className="font-semibold mb-1">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="min-w-0 flex-1">
+                            <h3 className="font-semibold mb-1 text-sm sm:text-base">
                               {notification.title}
                             </h3>
-                            <p className="text-muted-foreground">
+                            <p className="text-sm text-muted-foreground">
                               {notification.message}
                             </p>
-                            <p className="text-sm text-muted-foreground mt-2">
+                            <p className="text-xs sm:text-sm text-muted-foreground mt-2">
                               {formatDistanceToNow(new Date(notification.created_at), {
                                 addSuffix: true,
                                 locale: ptBR,
@@ -234,7 +234,7 @@ const Notifications = () => {
                             </p>
                           </div>
                           {!notification.read && (
-                            <div className="h-2 w-2 rounded-full bg-primary" />
+                            <div className="h-2 w-2 rounded-full bg-primary flex-shrink-0" />
                           )}
                         </div>
                       </div>

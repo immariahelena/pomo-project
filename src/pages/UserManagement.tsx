@@ -5,8 +5,6 @@ import Sidebar from "@/components/layout/Sidebar";
 import Header from "@/components/layout/Header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -14,14 +12,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { useUserRole } from "@/hooks/useUserRole";
@@ -250,14 +240,14 @@ const UserManagement = () => {
   const getApprovalBadge = (approved: boolean) => {
     if (approved) {
       return (
-        <Badge variant="default" className="bg-green-600">
+        <Badge variant="default" className="bg-green-600 text-xs">
           <CheckCircle className="h-3 w-3 mr-1" />
           Aprovado
         </Badge>
       );
     }
     return (
-      <Badge variant="secondary" className="bg-yellow-600 text-white">
+      <Badge variant="secondary" className="bg-yellow-600 text-white text-xs">
         <Clock className="h-3 w-3 mr-1" />
         Pendente
       </Badge>
@@ -283,66 +273,60 @@ const UserManagement = () => {
     <div className="min-h-screen flex bg-background">
       <Sidebar />
       
-      <main className="flex-1 overflow-auto">
+      <main className="flex-1 overflow-auto w-full">
         <Header onSearch={setSearchQuery} />
 
-        <div className="p-8 space-y-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold flex items-center gap-2">
-                <Shield className="h-8 w-8 text-primary" />
-                Gerenciamento de Usuários
-              </h1>
-              <p className="text-muted-foreground">
-                Controle os usuários e suas permissões no sistema
-              </p>
-            </div>
+        <div className="p-4 sm:p-6 lg:p-8 space-y-4 sm:space-y-6">
+          <div>
+            <h1 className="text-2xl sm:text-3xl font-bold flex items-center gap-2">
+              <Shield className="h-6 w-6 sm:h-8 sm:w-8 text-primary" />
+              Gerenciamento de Usuários
+            </h1>
+            <p className="text-sm sm:text-base text-muted-foreground">
+              Controle os usuários e suas permissões no sistema
+            </p>
           </div>
 
           <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
+            <CardHeader className="p-4 sm:p-6">
+              <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
                 <Users className="h-5 w-5" />
                 Usuários do Sistema
               </CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="p-4 sm:p-6 pt-0">
               {filteredUsers.length === 0 ? (
-                <p className="text-center text-muted-foreground py-8">
+                <p className="text-center text-muted-foreground py-8 text-sm sm:text-base">
                   {searchQuery
                     ? "Nenhum usuário encontrado com esse termo"
                     : "Nenhum usuário encontrado"}
                 </p>
               ) : (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Nome</TableHead>
-                      <TableHead>Email</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Função</TableHead>
-                      <TableHead>Cadastrado em</TableHead>
-                      <TableHead className="text-right">Ações</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredUsers.map((user) => (
-                      <TableRow key={user.id}>
-                        <TableCell className="font-medium">
-                          {user.full_name}
-                        </TableCell>
-                        <TableCell>{user.email}</TableCell>
-                        <TableCell>
+                <div className="space-y-3">
+                  {filteredUsers.map((user) => (
+                    <div 
+                      key={user.id} 
+                      className="p-3 sm:p-4 border rounded-lg bg-card space-y-3"
+                    >
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium truncate">{user.full_name}</p>
+                          <p className="text-sm text-muted-foreground truncate">{user.email}</p>
+                        </div>
+                        <div className="flex items-center gap-2 flex-wrap">
                           {getApprovalBadge(user.approved)}
-                        </TableCell>
-                        <TableCell>
+                        </div>
+                      </div>
+                      
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                        <div className="flex items-center gap-2 flex-wrap">
                           {editingUserId === user.id ? (
-                            <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-2 flex-wrap">
                               <Select
                                 value={newRole || user.role}
                                 onValueChange={setNewRole}
                               >
-                                <SelectTrigger className="w-[180px]">
+                                <SelectTrigger className="w-[140px] sm:w-[180px]">
                                   <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -370,55 +354,56 @@ const UserManagement = () => {
                               </Button>
                             </div>
                           ) : (
-                            <Badge
-                              variant={getRoleBadgeVariant(user.role)}
-                              className="cursor-pointer"
-                              onClick={() => {
-                                setEditingUserId(user.id);
-                                setNewRole(user.role);
-                              }}
-                            >
-                              {getRoleLabel(user.role)}
-                            </Badge>
+                            <>
+                              <Badge
+                                variant={getRoleBadgeVariant(user.role)}
+                                className="cursor-pointer"
+                                onClick={() => {
+                                  setEditingUserId(user.id);
+                                  setNewRole(user.role);
+                                }}
+                              >
+                                {getRoleLabel(user.role)}
+                              </Badge>
+                              <span className="text-xs text-muted-foreground">
+                                {new Date(user.created_at).toLocaleDateString("pt-BR")}
+                              </span>
+                            </>
                           )}
-                        </TableCell>
-                        <TableCell>
-                          {new Date(user.created_at).toLocaleDateString("pt-BR")}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <div className="flex items-center justify-end gap-1">
-                            {user.approved ? (
-                              <Button
-                                size="sm"
-                                variant="ghost"
-                                onClick={() => handleApproveUser(user.id, false)}
-                                title="Revogar acesso"
-                              >
-                                <XCircle className="h-4 w-4 text-yellow-600" />
-                              </Button>
-                            ) : (
-                              <Button
-                                size="sm"
-                                variant="ghost"
-                                onClick={() => handleApproveUser(user.id, true)}
-                                title="Aprovar acesso"
-                              >
-                                <CheckCircle className="h-4 w-4 text-green-600" />
-                              </Button>
-                            )}
+                        </div>
+                        
+                        <div className="flex items-center gap-1">
+                          {user.approved ? (
                             <Button
                               size="sm"
                               variant="ghost"
-                              onClick={() => setDeleteUserId(user.id)}
+                              onClick={() => handleApproveUser(user.id, false)}
+                              title="Revogar acesso"
                             >
-                              <Trash2 className="h-4 w-4 text-destructive" />
+                              <XCircle className="h-4 w-4 text-yellow-600" />
                             </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+                          ) : (
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => handleApproveUser(user.id, true)}
+                              title="Aprovar acesso"
+                            >
+                              <CheckCircle className="h-4 w-4 text-green-600" />
+                            </Button>
+                          )}
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => setDeleteUserId(user.id)}
+                          >
+                            <Trash2 className="h-4 w-4 text-destructive" />
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               )}
             </CardContent>
           </Card>
@@ -426,16 +411,16 @@ const UserManagement = () => {
       </main>
 
       <AlertDialog open={!!deleteUserId} onOpenChange={(open) => !open && setDeleteUserId(null)}>
-        <AlertDialogContent>
+        <AlertDialogContent className="max-w-[95vw] sm:max-w-lg">
           <AlertDialogHeader>
             <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
             <AlertDialogDescription>
               Tem certeza que deseja excluir este usuário? Esta ação não pode ser desfeita.
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDeleteUser} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+          <AlertDialogFooter className="flex-col sm:flex-row gap-2">
+            <AlertDialogCancel className="w-full sm:w-auto">Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteUser} className="w-full sm:w-auto bg-destructive text-destructive-foreground hover:bg-destructive/90">
               Excluir
             </AlertDialogAction>
           </AlertDialogFooter>

@@ -47,7 +47,6 @@ const Projects = () => {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [projectToDelete, setProjectToDelete] = useState<string | null>(null);
 
-  // Form state
   const [formData, setFormData] = useState({
     name: "",
     description: "",
@@ -68,8 +67,6 @@ const Projects = () => {
       navigate("/auth");
       return;
     }
-
-    // All authenticated users can create projects (enforced by RLS)
     setCanCreate(true);
   };
 
@@ -100,7 +97,6 @@ const Projects = () => {
       const { data: { user } } = await supabase.auth.getUser();
       
       if (editingProject) {
-        // Update existing project
         const { error } = await supabase
           .from("projects")
           .update({
@@ -120,7 +116,6 @@ const Projects = () => {
           description: "As alterações foram salvas.",
         });
       } else {
-        // Create new project
         const { error } = await supabase.from("projects").insert({
           name: formData.name,
           description: formData.description,
@@ -235,14 +230,14 @@ const Projects = () => {
     <div className="min-h-screen flex bg-background">
       <Sidebar />
       
-      <main className="flex-1 overflow-auto">
+      <main className="flex-1 overflow-auto w-full">
         <Header onSearch={setSearchQuery} />
 
-        <div className="p-8 space-y-6">
-          <div className="flex items-center justify-between">
+        <div className="p-4 sm:p-6 lg:p-8 space-y-4 sm:space-y-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
-              <h1 className="text-3xl font-bold">Projetos</h1>
-              <p className="text-muted-foreground">
+              <h1 className="text-2xl sm:text-3xl font-bold">Projetos</h1>
+              <p className="text-sm sm:text-base text-muted-foreground">
                 Gerencie todos os seus projetos audiovisuais
               </p>
             </div>
@@ -266,12 +261,12 @@ const Projects = () => {
                 }}
               >
                 <DialogTrigger asChild>
-                  <Button className="gap-2">
+                  <Button className="gap-2 w-full sm:w-auto">
                     <Plus className="h-4 w-4" />
                     Novo Projeto
                   </Button>
                 </DialogTrigger>
-                <DialogContent className="max-w-2xl">
+                <DialogContent className="max-w-[95vw] sm:max-w-2xl max-h-[90vh] overflow-y-auto">
                   <DialogHeader>
                     <DialogTitle>
                       {editingProject ? "Editar Projeto" : "Criar Novo Projeto"}
@@ -302,7 +297,7 @@ const Projects = () => {
                       />
                     </div>
 
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <Label htmlFor="clientName">Cliente</Label>
                         <Input
@@ -336,7 +331,7 @@ const Projects = () => {
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <Label htmlFor="startDate">Data de Início</Label>
                         <Input
@@ -362,7 +357,7 @@ const Projects = () => {
                       </div>
                     </div>
 
-                    <div className="flex justify-end gap-2">
+                    <div className="flex flex-col-reverse sm:flex-row justify-end gap-2">
                       <Button
                         type="button"
                         variant="outline"
@@ -384,7 +379,7 @@ const Projects = () => {
           </div>
 
           <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-            <AlertDialogContent>
+            <AlertDialogContent className="max-w-[95vw] sm:max-w-lg">
               <AlertDialogHeader>
                 <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
                 <AlertDialogDescription>
@@ -392,9 +387,9 @@ const Projects = () => {
                   Todos os dados relacionados ao projeto também serão excluídos.
                 </AlertDialogDescription>
               </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                <AlertDialogAction onClick={confirmDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              <AlertDialogFooter className="flex-col sm:flex-row gap-2">
+                <AlertDialogCancel className="w-full sm:w-auto">Cancelar</AlertDialogCancel>
+                <AlertDialogAction onClick={confirmDelete} className="w-full sm:w-auto bg-destructive text-destructive-foreground hover:bg-destructive/90">
                   Excluir
                 </AlertDialogAction>
               </AlertDialogFooter>
@@ -402,15 +397,15 @@ const Projects = () => {
           </AlertDialog>
 
           {filteredProjects.length === 0 ? (
-            <div className="text-center py-12">
-              <p className="text-muted-foreground">
+            <div className="text-center py-8 sm:py-12">
+              <p className="text-sm sm:text-base text-muted-foreground">
                 {searchQuery
                   ? "Nenhum projeto encontrado com esse termo"
                   : "Nenhum projeto cadastrado ainda"}
               </p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6">
               {filteredProjects.map((project) => (
                 <ProjectCard
                   key={project.id}
