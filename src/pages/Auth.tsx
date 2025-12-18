@@ -6,10 +6,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
-import { Eye, EyeOff, User, Lock } from "lucide-react";
+import { Eye, EyeOff, User, Lock, ArrowLeft } from "lucide-react";
 import { z } from "zod";
 
-// Validation schemas
 const loginSchema = z.object({
   email: z.string().trim().email("Email inválido").max(255, "Email muito longo"),
   password: z.string().min(1, "Senha é obrigatória").max(128, "Senha muito longa"),
@@ -47,7 +46,6 @@ const Auth = () => {
     const checkSession = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
-        // Check if user is approved
         const { data: profile } = await supabase
           .from("profiles")
           .select("approved")
@@ -59,7 +57,6 @@ const Auth = () => {
           return;
         }
 
-        // Check for pending invite
         const pendingToken = localStorage.getItem('pendingInviteToken');
         if (pendingToken) {
           localStorage.removeItem('pendingInviteToken');
@@ -77,7 +74,6 @@ const Auth = () => {
     setLoading(true);
 
     try {
-      // Validate email
       const validation = resetPasswordSchema.safeParse({ email });
       if (!validation.success) {
         const firstError = validation.error.errors[0];
@@ -122,7 +118,6 @@ const Auth = () => {
 
     try {
       if (isLogin) {
-        // Validate login inputs
         const validation = loginSchema.safeParse({ email, password });
         if (!validation.success) {
           const firstError = validation.error.errors[0];
@@ -142,7 +137,6 @@ const Auth = () => {
 
         if (error) throw error;
 
-        // Check if user is approved
         if (authData.user) {
           const { data: profile } = await supabase
             .from("profiles")
@@ -165,7 +159,6 @@ const Auth = () => {
           description: "Redirecionando...",
         });
 
-        // Check for pending invite
         const pendingToken = localStorage.getItem('pendingInviteToken');
         if (pendingToken) {
           localStorage.removeItem('pendingInviteToken');
@@ -174,7 +167,6 @@ const Auth = () => {
           navigate("/dashboard");
         }
       } else {
-        // Validate signup inputs
         const validation = signupSchema.safeParse({
           email,
           password,
@@ -206,7 +198,6 @@ const Auth = () => {
 
         if (error) throw error;
 
-        // Assign default 'collaborator' role to new user
         if (data.user) {
           await supabase.from("user_roles").insert({
             user_id: data.user.id,
@@ -233,34 +224,35 @@ const Auth = () => {
   };
 
   return (
-    <div className="min-h-screen flex">
+    <div className="min-h-screen flex flex-col lg:flex-row">
       {/* Left Side - Form */}
-      <div className="flex-1 flex items-center justify-center p-8 bg-background">
-        <div className="w-full max-w-md space-y-8">
+      <div className="flex-1 flex items-center justify-center p-4 sm:p-8 bg-background">
+        <div className="w-full max-w-md space-y-6 sm:space-y-8">
           {/* Logo */}
           <div className="flex items-center gap-2">
-            <div className="w-12 h-12 bg-fundo-branco rounded-full flex items-center justify-center">
+            <div className="w-10 h-10 sm:w-12 sm:h-12 bg-fundo-branco rounded-full flex items-center justify-center">
               <img src="/pomo.png" className="img" alt="Pomo Project" />
             </div>
           </div>
 
           {/* Navigation */}
-          <nav className="flex gap-6 text-sm">
+          <nav className="flex flex-wrap gap-3 sm:gap-6 text-xs sm:text-sm">
             <button
               onClick={() => navigate("/")}
-              className="text-foreground hover:text-primary transition-colors"
+              className="text-foreground hover:text-primary transition-colors flex items-center gap-1"
             >
+              <ArrowLeft className="h-3 w-3 sm:hidden" />
               PÁGINA INICIAL
             </button>
             <button
               onClick={() => navigate("/about")}
-              className="text-foreground hover:text-primary transition-colors"
+              className="text-foreground hover:text-primary transition-colors hidden sm:block"
             >
               SOBRE NÓS
             </button>
             <button
               onClick={() => navigate("/contact")}
-              className="text-foreground hover:text-primary transition-colors"
+              className="text-foreground hover:text-primary transition-colors hidden sm:block"
             >
               CONTATO
             </button>
@@ -274,13 +266,13 @@ const Auth = () => {
 
           {/* Title */}
           <div>
-            <h1 className="text-4xl font-bold text-primary">
+            <h1 className="text-2xl sm:text-4xl font-bold text-primary">
               {isForgotPassword ? "Recuperar Senha" : isLogin ? "Conecte-se" : "Inscrever-se"}
             </h1>
           </div>
 
           {/* Form */}
-          <form onSubmit={isForgotPassword ? handleForgotPassword : handleSubmit} className="space-y-6">
+          <form onSubmit={isForgotPassword ? handleForgotPassword : handleSubmit} className="space-y-4 sm:space-y-6">
             {isForgotPassword ? (
               <>
                 <div className="space-y-2">
@@ -297,7 +289,7 @@ const Auth = () => {
                     />
                     <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   </div>
-                  <p className="text-sm text-muted-foreground mt-2">
+                  <p className="text-xs sm:text-sm text-muted-foreground mt-2">
                     Digite seu e-mail para receber um link de recuperação de senha.
                   </p>
                 </div>
@@ -391,7 +383,7 @@ const Auth = () => {
             )}
 
             {isLogin && !isForgotPassword && (
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
                 <div className="flex items-center space-x-2">
                   <Checkbox
                     id="remember"
@@ -456,10 +448,10 @@ const Auth = () => {
       </div>
 
       {/* Right Side - Blue Background */}
-      <div className="hidden lg:flex flex-1 bg-primary items-center justify-center p-12">
+      <div className="hidden lg:flex flex-1 bg-primary items-center justify-center p-8 lg:p-12">
         <div className="text-primary-foreground space-y-4 max-w-md">
-          <h2 className="text-3xl font-bold">Bem-vindo ao Pomo Project</h2>
-          <p className="text-lg opacity-90">
+          <h2 className="text-2xl lg:text-3xl font-bold">Bem-vindo ao Pomo Project</h2>
+          <p className="text-base lg:text-lg opacity-90">
             Sistema de Gestão de Produções Audiovisuais - Organize seus projetos,
             gerencie equipes e acompanhe o progresso em tempo real.
           </p>

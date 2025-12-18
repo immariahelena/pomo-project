@@ -62,7 +62,6 @@ const Dashboard = () => {
 
       setProjects(projectsData || []);
 
-      // Calculate stats
       const { data: allProjects } = await supabase
         .from("projects")
         .select("status");
@@ -106,72 +105,72 @@ const Dashboard = () => {
     <div className="min-h-screen flex bg-background">
       <Sidebar />
       
-      <main className="flex-1 overflow-auto">
+      <main className="flex-1 overflow-auto w-full">
         <Header onSearch={setSearchQuery} />
 
         {/* Dashboard Content */}
-        <div className="p-8 space-y-8">
+        <div className="p-4 sm:p-6 lg:p-8 space-y-6 sm:space-y-8">
           {/* Stats Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6">
             {/* Total Projetos */}
             <Card className="hover:shadow-lg transition-shadow">
-              <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium">Total Projetos</CardTitle>
-                <BarChart3 className="h-5 w-5 text-primary" />
+              <CardHeader className="flex flex-row items-center justify-between pb-2 p-3 sm:p-6">
+                <CardTitle className="text-xs sm:text-sm font-medium">Total Projetos</CardTitle>
+                <BarChart3 className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
               </CardHeader>
-              <CardContent>
-                <div className="text-3xl font-bold">{stats.total}</div>
+              <CardContent className="p-3 sm:p-6 pt-0">
+                <div className="text-2xl sm:text-3xl font-bold">{stats.total}</div>
               </CardContent>
             </Card>
 
             {/* Finalizados */}
             <Card className="hover:shadow-lg transition-shadow">
-              <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium">Finalizados</CardTitle>
-                <CheckCircle2 className="h-5 w-5 text-success" />
+              <CardHeader className="flex flex-row items-center justify-between pb-2 p-3 sm:p-6">
+                <CardTitle className="text-xs sm:text-sm font-medium">Finalizados</CardTitle>
+                <CheckCircle2 className="h-4 w-4 sm:h-5 sm:w-5 text-success" />
               </CardHeader>
-              <CardContent>
-                <div className="text-3xl font-bold">{stats.finalizados}</div>
+              <CardContent className="p-3 sm:p-6 pt-0">
+                <div className="text-2xl sm:text-3xl font-bold">{stats.finalizados}</div>
               </CardContent>
             </Card>
 
             {/* Em Processamento */}
             <Card className="hover:shadow-lg transition-shadow">
-              <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium">Em Processamento</CardTitle>
-                <Clock className="h-5 w-5 text-warning" />
+              <CardHeader className="flex flex-row items-center justify-between pb-2 p-3 sm:p-6">
+                <CardTitle className="text-xs sm:text-sm font-medium">Em Processamento</CardTitle>
+                <Clock className="h-4 w-4 sm:h-5 sm:w-5 text-warning" />
               </CardHeader>
-              <CardContent>
-                <div className="text-3xl font-bold">{stats.emProcessamento}</div>
+              <CardContent className="p-3 sm:p-6 pt-0">
+                <div className="text-2xl sm:text-3xl font-bold">{stats.emProcessamento}</div>
               </CardContent>
             </Card>
 
             {/* Atrasados */}
             <Card className="hover:shadow-lg transition-shadow">
-              <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium">Atrasados</CardTitle>
-                <AlertCircle className="h-5 w-5 text-error" />
+              <CardHeader className="flex flex-row items-center justify-between pb-2 p-3 sm:p-6">
+                <CardTitle className="text-xs sm:text-sm font-medium">Atrasados</CardTitle>
+                <AlertCircle className="h-4 w-4 sm:h-5 sm:w-5 text-error" />
               </CardHeader>
-              <CardContent>
-                <div className="text-3xl font-bold">{stats.atrasados}</div>
+              <CardContent className="p-3 sm:p-6 pt-0">
+                <div className="text-2xl sm:text-3xl font-bold">{stats.atrasados}</div>
               </CardContent>
             </Card>
           </div>
 
           {/* Recent Projects */}
           <Card>
-            <CardHeader>
-              <CardTitle>Projetos Recentes</CardTitle>
+            <CardHeader className="p-4 sm:p-6">
+              <CardTitle className="text-lg sm:text-xl">Projetos Recentes</CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="p-4 sm:p-6 pt-0">
               {filteredProjects.length === 0 ? (
-                <p className="text-center text-muted-foreground py-8">
+                <p className="text-center text-muted-foreground py-6 sm:py-8 text-sm sm:text-base">
                   {searchQuery
                     ? "Nenhum projeto encontrado com esse termo"
                     : "Nenhum projeto cadastrado ainda"}
                 </p>
               ) : (
-                <div className="space-y-4">
+                <div className="space-y-3 sm:space-y-4">
                   {filteredProjects.map((project) => (
                     <ProjectCard
                       key={project.id}
