@@ -47,6 +47,18 @@ const Auth = () => {
     const checkSession = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
+        // Check if user is approved
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("approved")
+          .eq("id", session.user.id)
+          .single();
+
+        if (!profile?.approved) {
+          navigate("/pending-approval");
+          return;
+        }
+
         // Check for pending invite
         const pendingToken = localStorage.getItem('pendingInviteToken');
         if (pendingToken) {
@@ -123,12 +135,30 @@ const Auth = () => {
           return;
         }
 
-        const { error } = await supabase.auth.signInWithPassword({
+        const { data: authData, error } = await supabase.auth.signInWithPassword({
           email: validation.data.email,
           password: validation.data.password,
         });
 
         if (error) throw error;
+
+        // Check if user is approved
+        if (authData.user) {
+          const { data: profile } = await supabase
+            .from("profiles")
+            .select("approved")
+            .eq("id", authData.user.id)
+            .single();
+
+          if (!profile?.approved) {
+            toast({
+              title: "Aguardando aprovação",
+              description: "Sua conta está aguardando aprovação do administrador.",
+            });
+            navigate("/pending-approval");
+            return;
+          }
+        }
 
         toast({
           title: "Login realizado com sucesso!",
